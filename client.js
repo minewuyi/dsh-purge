@@ -46,6 +46,11 @@ window.__ModuleLoader__.load({ id: "dsh-purge", factory: (require) => {
 			if (path.indexOf("/dsh-purge/update") !== -1) return method === "POST" ? 180000 : 45000;
 			if (path.indexOf("/dsh-purge/uninstall") !== -1) return 90000;
 			if (path.indexOf("/dsh-purge/skill") !== -1) return method === "POST" ? 120000 : 20000;
+			// status 会在"应用"期间被后端的同步落盘阻塞，默认 20s 必然被 abort，界面只会显示"读取失败: timeout"。
+			if (path.indexOf("/dsh-purge/status") !== -1) return 60000;
+			if (path.indexOf("/dsh-purge/apply") !== -1) return 240000;
+			if (path.indexOf("/dsh-purge/revert") !== -1) return 120000;
+			if (path.indexOf("/dsh-purge/restart") !== -1) return 60000;
 			return 20000;
 		}
 		function isAbortError(e) {
@@ -371,7 +376,7 @@ window.__ModuleLoader__.load({ id: "dsh-purge", factory: (require) => {
 			"patch.24": "preset fetch 启用",
 			"patch.25": "去掉官方默认身份（功能提示词不动）",
 			"patch.26": "minimal：去掉默认身份并打开 inject",
-			"patch.28": "dsh-liangshen（梁神）：phase-1 保留注入段",
+			"patch.28": "dsh-liangshen（梁神）：phase-1 保留 dsh-purge / dshpg 段",
 			"patch.70": "极简模式终端不再禁止网络",
 			"patch.71": "梁神去掉官方身份句",
 			"patch.29": "dsh-tool-web：外部 untrusted 拦截→可执行",
@@ -421,7 +426,6 @@ window.__ModuleLoader__.load({ id: "dsh-purge", factory: (require) => {
 			"patch.77": "回退标记到达时丢弃已发送消息",
 			"patch.78": "补丁文件缺失时从 .bak 恢复",
 			"patch.80": "恢复官方极简工具表",
-			"patch.81": "每一步重放完整 prompt-inject",
 			"patch.82": "主进程兜底 DSH_PROFILE=desktop",
 			"patch.83": "host 信号杀时不报错不弹对话框",
 			"patch.84": "host code=0 正常退出不报错 (消除 stopped 对话框)",
@@ -712,7 +716,7 @@ window.__ModuleLoader__.load({ id: "dsh-purge", factory: (require) => {
 			"patch.24": "preset fetch on",
 			"patch.25": "Strip official default identity (keep feature prompts)",
 			"patch.26": "minimal: strip identity, open inject",
-			"patch.28": "dsh-liangshen: keep inject in phase-1",
+			"patch.28": "dsh-liangshen: keep dsh-purge / dshpg in phase-1",
 			"patch.70": "Minimal shell drops the no-network line",
 			"patch.71": "Liangshen drops the stock identity line",
 			"patch.29": "dsh-tool-web: untrusted framing → usable data",
@@ -762,7 +766,6 @@ window.__ModuleLoader__.load({ id: "dsh-purge", factory: (require) => {
 			"patch.77": "Rewind marker drops already-sent messages",
 			"patch.78": "Restore missing overlay from .bak backup",
 			"patch.80": "Restore official minimal tool plugins",
-			"patch.81": "Replay the full prompt-inject every step",
 			"patch.82": "Fallback DSH_PROFILE=desktop in main process",
 			"patch.83": "Don't fail on signal kill (no crash dialog)",
 			"patch.84": "Don't fail on code=0 clean exit (no stopped dialog)",
@@ -942,6 +945,9 @@ body[data-ds-dark-theme] .dshp-restart-card .dshp-btn-primary,body[data-ds-dark-
 
 .dshp-dock{position:fixed;top:12px;right:12px;z-index:10050;display:flex;flex-direction:column;width:var(--dshp-dock-w,620px);height:var(--dshp-dock-h,72vh);min-width:380px;min-height:320px;max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);box-sizing:border-box;background:color-mix(in srgb,var(--dsw-alias-bg-layer-1,var(--dshp-paper,#1c1c1c)) 52%,transparent);backdrop-filter:blur(22px) saturate(1.35);-webkit-backdrop-filter:blur(22px) saturate(1.35);border:1px solid color-mix(in srgb,var(--dsw-alias-border-l1,var(--dshp-line,#555)) 65%,transparent);border-radius:12px;box-shadow:0 18px 48px color-mix(in srgb,#000 30%,transparent),0 0 0 1px color-mix(in srgb,#fff 6%,transparent);pointer-events:auto;color:var(--dsw-alias-label-primary,var(--dshp-ink,#f2f2f2));overflow:visible}
 .dshp-dock[data-open="0"]{display:none}
+.dshp-launch{position:fixed;right:16px;bottom:16px;z-index:10040;appearance:none;display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border:1px solid color-mix(in srgb,var(--dsw-alias-brand-primary,#6dbf8c) 55%,transparent);border-radius:999px;background:color-mix(in srgb,var(--dsw-alias-bg-layer-1,#1c1c1c) 72%,transparent);color:var(--dsw-alias-label-primary,#f2f2f2);cursor:pointer;font:13px/1 inherit;box-shadow:0 8px 22px color-mix(in srgb,#000 28%,transparent);pointer-events:auto}
+.dshp-launch:hover{border-color:var(--dsw-alias-brand-primary,#6dbf8c);background:color-mix(in srgb,var(--dsw-alias-brand-primary,#6dbf8c) 18%,transparent)}
+.dshp-launch[data-open="1"]{display:none}
 .dshp-dock-head{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid color-mix(in srgb,var(--dsw-alias-border-l1,var(--dshp-line,#555)) 55%,transparent);background:transparent;cursor:grab;user-select:none;touch-action:none;color:var(--dsw-alias-label-primary,var(--dshp-ink,#f2f2f2));border-radius:12px 12px 0 0}
 .dshp-dock-head:active{cursor:grabbing}
 .dshp-dock-head b{font-size:14px;font-weight:600;color:inherit;text-shadow:0 1px 0 color-mix(in srgb,#000 18%,transparent)}
@@ -8533,6 +8539,19 @@ body[data-ds-dark-theme] .dshp-rewind-item span{color:var(--dsw-alias-label-tert
 			);
 		}
 
+		function PurgeLauncher() {
+			const t = useT();
+			const st = useDock();
+			return h("button", {
+				type: "button",
+				className: "dshp-launch",
+				"data-open": st.open ? "1" : "0",
+				"data-testid": "dsh-purge-launch",
+				title: t("dock.newSession"),
+				onClick: () => toggleDock(),
+			}, t("dock.newSession"));
+		}
+
 		/** 首页：模式旁挂「dsh-purge」→ 打开插件。红队模式走模式下拉（registry 声明）。 */
 		function HeroNewSessionMount() {
 			const t = useT();
@@ -8691,7 +8710,7 @@ body[data-ds-dark-theme] .dshp-rewind-item span{color:var(--dsw-alias-label-tert
 				name: "shell.overlay",
 				id: "dsh-purge-dock",
 				order: 50,
-			}, () => h(react.Fragment, null, h(WelcomeNotice), h(PurgeDock), h(HeroNewSessionMount), h(TabRowPurgeMount), h(EnvAdaptSendGate))));
+			}, () => h(react.Fragment, null, h(WelcomeNotice), h(PurgeLauncher), h(PurgeDock), h(HeroNewSessionMount), h(TabRowPurgeMount), h(EnvAdaptSendGate))));
 			try {
 				if (typeof ctx.inject === "function") {
 					ctx.inject(["sessions", "uiWorkspace", "workspaces", "conversation"], (host) => installRewindUi(host));

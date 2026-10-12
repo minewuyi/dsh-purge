@@ -1,3 +1,39 @@
+# 1.1.71
+
+## 中文
+
+- 版本 **1.1.71**。
+- 修复 1.1.70 的 `??` 混 `||`：插件启用时 `failed to import`（桌面 / Web 同一入口）。
+- #86 只改 UI 队列 steer → followup；公共 `steer()` 收回 next-step，代理间 `send_message` 仍下一步插入。
+- `installed-rev` 跨版本不再沿用旧 `apply:x.y.z`。#88 按现行 `renderedPrompt` / 旧 `system` 锚点打中的那条落标记。
+- 发版前 `node --check` 主入口，避免再把语法错误打进 Release。
+
+## English
+
+- **1.1.71**.
+- Fix 1.1.70 `??` mixed with `||`: enable failed to import on desktop and web.
+- #86 keeps UI queue steer → followup. Public `steer()` is next-step again so `send_message` inserts at the next step.
+- Stale `apply:x.y.z` in `installed-rev` refreshes across versions. #88 marks the host anchor that actually exists (`renderedPrompt` or `system`).
+- Release CI syntax-checks the plugin entry.
+
+# 1.1.70
+
+## 中文
+
+- 版本 **1.1.70**。
+- Hub / 残装若给 `dsh-purge` 加上 `pluginPackages`，Cordis 会一直 pending，宿主退出码 1。本版把依赖钉回 `systemPrompt` + `tools`。
+- 清洗页只合并升级链展示（免责、审批、挂全文、hooks 等），Apply 仍打全部补丁。
+- 去掉已无用的 #81 / #89 清单行；挂全文并进 #87，官方 phase-1 走静默放行。
+- 指挥端改为「按用户给的目标开工」。合并 #97 / #98 / #99。
+
+## English
+
+- **1.1.70**.
+- Hub / incomplete installs that inject `pluginPackages` leave dsh-purge pending and kill the host. Dependencies are pinned to `systemPrompt` + `tools`.
+- Clean page groups upgrade-chain patches for display only; Apply still writes every patch.
+- Dropped dead #81 / #89 rows. Hang lives in #87. Official phase-1 keep is silent.
+- Commander bind: start from the user's target. Includes #97 / #98 / #99.
+
 # 1.1.69
 
 ## 中文
